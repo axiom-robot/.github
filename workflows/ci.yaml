@@ -1,0 +1,88 @@
+name: CI Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - feature
+  pull_request:
+    branches:
+      - main
+      - feature
+  workflow_dispatch:
+    inputs:
+      no-cache:
+        description: 'Run tests without cache'
+        default: false
+        required: false
+        type: boolean
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    env: 
+      PYTHONVERSION: "3.12"
+      NO_CACHE: ${{ github.event.inputs.no-cache || 'false' }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install apt tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl python3-pip
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHONVERSION }}
+          cache: "poetry"
+
+      - name: Install Dependencies
+        run: |
+          if [[ "${{ env.NO_CACHE }}" == "true" ]]; then
+            poetry install --no-root --no-dev
+          else
+            poetry install --no-root
+          fi
+
+      - name: Run Tests
+        run: bash run_tests.sh
+
+  lint-check:
+    runs-on: ubuntu-latest
+    env: 
+      PYTHONVERSION: "3.12"
+      NO_CACHE: ${{ github.event.inputs.no-cache || 'false' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install apt tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl python3-pip
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHONVERSION }}
+          cache: "poetry"
+
+      - name: Install Dependencies
+        run: |
+          poetry install --with dev
+
+      - name: Run Lint
+        run: bash run_linters.sh
