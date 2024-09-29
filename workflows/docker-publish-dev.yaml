@@ -30,7 +30,7 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64  # 必要に応じてプラットフォームを追加
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/lyra:dev
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/$(echo "${{ github.repository }}" | cut -d'/' -f2):dev
           no-cache: true
 
       - name: Logout from Docker Hub
